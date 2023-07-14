@@ -35,10 +35,10 @@ public class WebSecurity {
       essa autenticação tem que ser padrão do spring, então em minha tabela os nome dos atributos
       devem estar como o spring quer, tabela user, atributos username, password e enabled, com isso ele faz a autenticação
     */
-    @Bean
-    public UserDetailsService userDetailsService(DataSource dataSource){
-        return new JdbcUserDetailsManager(dataSource);
-    }
+    // @Bean
+    // public UserDetailsService userDetailsService(DataSource dataSource){
+    //     return new JdbcUserDetailsManager(dataSource);
+    // }
     
 
     //nesse bean estamos fazendo autenticação via memoria
@@ -64,7 +64,7 @@ public class WebSecurity {
 
     @Bean
     public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder();
+        return NoOpPasswordEncoder.getInstance();
     }
 
 }
