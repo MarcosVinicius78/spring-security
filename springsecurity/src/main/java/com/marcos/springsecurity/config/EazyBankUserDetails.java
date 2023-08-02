@@ -11,10 +11,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import com.marcos.springsecurity.model.Customer;
 import com.marcos.springsecurity.repository.CustomerRepository;
 
+@CrossOrigin("")
 @Service
 public class EazyBankUserDetails implements UserDetailsService {
 

@@ -26,7 +26,7 @@ public class LoginController {
 
         
         try{
-            if (customerRepository.findByEmail(customer.getEmail()) != null) {
+            if (customerRepository.findByEmail(customer.getEmail()).size() > 0) {
                 return ResponseEntity.status(HttpStatus.OK).body("E-mail ja cadastrado");
             }
 
