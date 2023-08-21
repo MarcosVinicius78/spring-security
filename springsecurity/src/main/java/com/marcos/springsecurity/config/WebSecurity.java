@@ -8,11 +8,17 @@ import org.springframework.lang.Nullable;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+
+import com.marcos.springsecurity.filter.CsrfCookieFilter;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -22,8 +28,15 @@ public class WebSecurity {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.cors(cors -> {
 
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+
+        requestHandler.setCsrfRequestAttributeName("_csrf");
+
+        http
+        .securityContext(require -> require.requireExplicitSave(false))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+        .cors(cors -> {
             cors.configurationSource(new CorsConfigurationSource() {
 
                 @Override
@@ -40,15 +53,18 @@ public class WebSecurity {
                 }
 
             });
+
             try {
-                http.csrf(csrf -> csrf.disable())
+                http.csrf(csrf -> csrf.csrfTokenRequestHandler(requestHandler)
+                        .ignoringRequestMatchers("/contact", "/register")
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                        .addFilterBefore(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                         .authorizeHttpRequests(auth -> auth.requestMatchers("/notices", "/contact", "/register")
                                 .permitAll()
                                 .requestMatchers("/myAccount", "/balance", "/cards", "/loans", "/user").authenticated())
-                        .formLogin(Customizer.withDefaults())
+
                         .httpBasic(Customizer.withDefaults());
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
 
