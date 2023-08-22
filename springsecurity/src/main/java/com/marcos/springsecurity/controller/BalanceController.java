@@ -12,18 +12,17 @@ import com.marcos.springsecurity.repository.AccountTransactionsRepository;
 
 @RestController
 public class BalanceController {
-    
-   
+
     @Autowired
     private AccountTransactionsRepository accountTransactionsRepository;
 
-    @GetMapping("/myBalance/{id}")
+    @GetMapping("/myBalance")
     public List<AccountTransactions> getBalanceDetails(@RequestParam int id) {
-        List<AccountTransactions> accountTransactions = accountTransactionsRepository.
-                findByCustomerIdOrderByTransactionDtDesc(id);
-        if (accountTransactions != null ) {
+        List<AccountTransactions> accountTransactions = accountTransactionsRepository
+                .findByCustomerIdOrderByTransactionDtDesc(id);
+        if (accountTransactions != null) {
             return accountTransactions;
-        }else {
+        } else {
             return null;
         }
     }

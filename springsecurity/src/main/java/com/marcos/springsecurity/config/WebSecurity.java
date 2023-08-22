@@ -34,41 +34,45 @@ public class WebSecurity {
         requestHandler.setCsrfRequestAttributeName("_csrf");
 
         http
-        .securityContext(require -> require.requireExplicitSave(false))
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
-        .cors(cors -> {
-            cors.configurationSource(new CorsConfigurationSource() {
+                .securityContext(require -> require.requireExplicitSave(false))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+                .cors(cors -> {
+                    cors.configurationSource(new CorsConfigurationSource() {
 
-                @Override
-                @Nullable
-                public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
-                    CorsConfiguration config = new CorsConfiguration();
+                        @Override
+                        @Nullable
+                        public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                            CorsConfiguration config = new CorsConfiguration();
 
-                    config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
-                    config.setAllowedMethods(Collections.singletonList("*"));
-                    config.setAllowCredentials(true);
-                    config.setAllowedHeaders(Collections.singletonList("*"));
-                    config.setMaxAge(3600L);
-                    return config;
-                }
+                            config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+                            config.setAllowedMethods(Collections.singletonList("*"));
+                            config.setAllowCredentials(true);
+                            config.setAllowedHeaders(Collections.singletonList("*"));
+                            config.setMaxAge(3600L);
+                            return config;
+                        }
 
-            });
+                    });
 
-            try {
-                http.csrf(csrf -> csrf.csrfTokenRequestHandler(requestHandler)
-                        .ignoringRequestMatchers("/contact", "/register")
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
-                        .addFilterBefore(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
-                        .authorizeHttpRequests(auth -> auth.requestMatchers("/notices", "/contact", "/register")
-                                .permitAll()
-                                .requestMatchers("/myAccount", "/balance", "/cards", "/loans", "/user").authenticated())
+                    try {
+                        http.csrf(csrf -> csrf.csrfTokenRequestHandler(requestHandler)
+                                .ignoringRequestMatchers("/contact", "/register")
+                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                                .addFilterBefore(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+                                .authorizeHttpRequests(auth -> auth.requestMatchers("/myAccount")
+                                        .hasAuthority("VIEWACCOUNT")
+                                        .requestMatchers("/myBalance").hasAnyAuthority("VIEWACCOUNT", "VIEWBALANCE")
+                                        .requestMatchers("/myCards").hasAuthority("VIEWCARDS")
+                                        .requestMatchers("/myLoans").hasAuthority("VIEWLOANS")
+                                        .requestMatchers("/notices", "/contact", "/register").permitAll()
+                                        .requestMatchers("/user").authenticated())
+                                .formLogin(Customizer.withDefaults())
+                                .httpBasic(Customizer.withDefaults());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
-                        .httpBasic(Customizer.withDefaults());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        });
+                });
         return http.build();
     }
 

@@ -17,7 +17,7 @@ public class ContactController {
      @Autowired
     private ContactRepository contactRepository;
 
-    @PostMapping("/contact")
+    @PostMapping("/myContact")
     public Contact saveContactInquiryDetails(@RequestBody Contact contact) {
         contact.setContactId(getServiceReqNumber());
         contact.setCreateDt(new Date(System.currentTimeMillis()));
