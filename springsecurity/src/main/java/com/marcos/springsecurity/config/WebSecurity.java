@@ -19,6 +19,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.marcos.springsecurity.filter.AuthoritiesLoggingAfterFilter;
+import com.marcos.springsecurity.filter.AuthoritiesLoggingAtFilter;
 import com.marcos.springsecurity.filter.CsrfCookieFilter;
 import com.marcos.springsecurity.filter.RequestValidationBeforeFilter;
 
@@ -63,6 +64,7 @@ public class WebSecurity {
                                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                                 .addFilterAfter(new AuthoritiesLoggingAfterFilter() ,BasicAuthenticationFilter.class)
                                 .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
+                                .addFilterAt(new AuthoritiesLoggingAtFilter(), BasicAuthenticationFilter.class)
                                 .authorizeHttpRequests(auth -> 
                                         auth.requestMatchers("/myAccount").hasRole("USER")
                                         .requestMatchers("/myBalance").hasAnyRole("USER", "ADMIN")
