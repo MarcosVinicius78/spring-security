@@ -1,5 +1,6 @@
 package com.marcos.springsecurity.config;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import org.springframework.context.annotation.Bean;
@@ -21,6 +22,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import com.marcos.springsecurity.filter.AuthoritiesLoggingAfterFilter;
 import com.marcos.springsecurity.filter.AuthoritiesLoggingAtFilter;
 import com.marcos.springsecurity.filter.CsrfCookieFilter;
+import com.marcos.springsecurity.filter.JWTTokenGeneratorFilter;
+import com.marcos.springsecurity.filter.JWTTokenValidatorFilter;
 import com.marcos.springsecurity.filter.RequestValidationBeforeFilter;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,55 +33,39 @@ import jakarta.servlet.http.HttpServletRequest;
 public class WebSecurity {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
+    SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-
         requestHandler.setCsrfRequestAttributeName("_csrf");
-
-        http
-                .securityContext(require -> require.requireExplicitSave(false))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
-                .cors(cors -> {
-                    cors.configurationSource(new CorsConfigurationSource() {
-
-                        @Override
-                        @Nullable
-                        public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
-                            CorsConfiguration config = new CorsConfiguration();
-
-                            config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
-                            config.setAllowedMethods(Collections.singletonList("*"));
-                            config.setAllowCredentials(true);
-                            config.setAllowedHeaders(Collections.singletonList("*"));
-                            config.setMaxAge(3600L);
-                            return config;
-                        }
-
-                    });
-
-                    try {
-                        http.csrf(csrf -> csrf.csrfTokenRequestHandler(requestHandler)
-                                .ignoringRequestMatchers("/contact", "/register")
-                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
-                                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
-                                .addFilterAfter(new AuthoritiesLoggingAfterFilter() ,BasicAuthenticationFilter.class)
-                                .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
-                                .addFilterAt(new AuthoritiesLoggingAtFilter(), BasicAuthenticationFilter.class)
-                                .authorizeHttpRequests(auth -> 
-                                        auth.requestMatchers("/myAccount").hasRole("USER")
-                                        .requestMatchers("/myBalance").hasAnyRole("USER", "ADMIN")
-                                        .requestMatchers("/myLoans").hasRole("USER")
-                                        .requestMatchers("/myCards").hasRole("USER")
-                                        .requestMatchers("/notices", "/contact", "/register").permitAll()
-                                        .requestMatchers("/user").authenticated())
-                                .formLogin(Customizer.withDefaults())
-                                .httpBasic(Customizer.withDefaults());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                });
+        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
+            @Override
+            public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                CorsConfiguration config = new CorsConfiguration();
+                config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+                config.setAllowedMethods(Collections.singletonList("*"));
+                config.setAllowCredentials(true);
+                config.setAllowedHeaders(Collections.singletonList("*"));
+                config.setExposedHeaders(Arrays.asList("Authorization"));
+                config.setMaxAge(3600L);
+                return config;
+            }
+                })).csrf((csrf) -> csrf.csrfTokenRequestHandler(requestHandler).ignoringRequestMatchers("/contact","/register")
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
+                .addFilterAt(new AuthoritiesLoggingAtFilter(),BasicAuthenticationFilter.class)
+                .addFilterAfter(new AuthoritiesLoggingAfterFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class)
+                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
+                .authorizeHttpRequests((requests)->requests
+                        .requestMatchers("/myAccount").hasRole("USER")
+                        .requestMatchers("/myBalance").hasAnyRole("USER","ADMIN")
+                        .requestMatchers("/myLoans").hasRole("USER")
+                        .requestMatchers("/myCards").hasRole("USER")
+                        .requestMatchers("/user").authenticated()
+                        .requestMatchers("/notices","/contact","/register").permitAll())
+                .formLogin(Customizer.withDefaults())
+                .httpBasic(Customizer.withDefaults());
         return http.build();
     }
 
