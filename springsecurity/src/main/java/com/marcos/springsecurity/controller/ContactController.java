@@ -1,9 +1,13 @@
 package com.marcos.springsecurity.controller;
 
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PostFilter;
+import org.springframework.security.access.prepost.PreFilter;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,11 +21,21 @@ public class ContactController {
      @Autowired
     private ContactRepository contactRepository;
 
+
+    //filterObject é p request body que recebemos no metodo, e o contactName é o atributo que temos em nosso model contact
+    //em nosso front, quando for salvar, precisa mandar uma lista e não um unico objeto
     @PostMapping("/myContact")
-    public Contact saveContactInquiryDetails(@RequestBody Contact contact) {
+    @PreFilter("filterObject.contactName != 'Test'")
+    // @PostFilter("filterObject.contactName != 'Test'")
+    public List<Contact> saveContactInquiryDetails(@RequestBody List<Contact> contacts) {
+        Contact contact = contacts.get(0);
+
         contact.setContactId(getServiceReqNumber());
         contact.setCreateDt(new Date(System.currentTimeMillis()));
-        return contactRepository.save(contact);
+        contact = contactRepository.save(contact);
+        List<Contact> saveContacts = new ArrayList<>();
+        saveContacts.add(contact);
+        return saveContacts;
     }
 
     public String getServiceReqNumber() {
